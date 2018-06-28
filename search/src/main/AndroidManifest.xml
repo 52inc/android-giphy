@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ftinc.giphy.search" >
+
+    <application>
+        <activity android:name=".GiphySearchActivity"
+            android:theme="@style/Theme.GiphySearch"
+            />
+    </application>
+</manifest>
