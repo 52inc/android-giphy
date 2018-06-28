@@ -25,6 +25,16 @@ object GiphySearch {
 
 
     /**
+     * Create a new configuration instance for launching the Giphy search activity for searching
+     * GIFs and selecting and returning them
+     */
+    fun create(apiKey: String): Builder {
+        val builder = Builder(apiKey)
+        return builder
+    }
+
+
+    /**
      * Parse the result of a [GiphySearchActivity] from the user previously calling [create]
      */
     fun parseResult(resultCode: Int, requestCode: Int, data: Intent?): GiphyGif? {

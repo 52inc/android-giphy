@@ -1,9 +1,11 @@
 package com.ftinc.giphy.search
 
+
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.RecyclerView
 import android.support.v7.widget.SearchView
 import android.support.v7.widget.StaggeredGridLayoutManager
 import android.support.v7.widget.StaggeredGridLayoutManager.VERTICAL
@@ -14,17 +16,20 @@ import com.ftinc.giphy.api.model.Rendition
 import com.ftinc.giphy.search.adapter.GifRecyclerAdapter
 import com.ftinc.giphy.search.model.GiphyGif
 import com.ftinc.kit.kotlin.adapter.ListRecyclerAdapter
-import com.ftinc.kit.kotlin.utils.bindEnum
-import com.ftinc.kit.kotlin.utils.bindInt
-import com.ftinc.kit.kotlin.utils.bindOptionalString
-import com.ftinc.kit.kotlin.utils.bindString
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_giphy_search.*
-import okhttp3.logging.HttpLoggingInterceptor.Level.BODY
-import okhttp3.logging.HttpLoggingInterceptor.Level.NONE
+import android.nfc.tech.MifareUltralight.PAGE_SIZE
+import android.support.design.widget.CollapsingToolbarLayout
+import android.util.Log
+import android.view.ViewGroup
+import com.ftinc.giphy.api.model.GifResponse
+import com.ftinc.kit.kotlin.extensions.dpToPx
+import com.ftinc.kit.kotlin.utils.*
+import com.ftinc.kit.util.UIUtils
+import okhttp3.logging.HttpLoggingInterceptor.Level.*
 
 
 class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClickListener<Gif>,
@@ -32,9 +37,13 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
 
     private val apiKey by bindString(EXTRA_API_KEY)
     private val url by bindString(EXTRA_URL, Giphy.DEFAULT_URL)
-    private val rendition by bindEnum<Rendition>(EXTRA_RENDITION)
+    private val rendition by bindOptionalEnum<Rendition>(EXTRA_RENDITION)
     private val limit by bindInt(EXTRA_LIMIT, -1)
     private val lang by bindOptionalString(EXTRA_LANG)
+
+    private val searchCardMargin by lazy { dpToPx(8f) }
+    private val searchCardHeight by lazy { dpToPx(48f) }
+    private val appBarHeight by lazy { UIUtils.getActionBarSize(this) }
 
     private lateinit var giphy: Giphy
     private lateinit var adapter: GifRecyclerAdapter
@@ -49,18 +58,43 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
 
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.title = null
         appbar.setNavigationOnClickListener { finish() }
 
-        adapter = GifRecyclerAdapter(this)
+        appbar_layout.addOnOffsetChangedListener { _, verticalOffset ->
+            Log.d("GSA", "onOffsetChanged($verticalOffset, ${appbar.height})")
+            val percent = (appbar.height + verticalOffset).toFloat() / appbar.height.toFloat()
+            val margin = percent * searchCardMargin
+            val height = ((1f - percent) * (appBarHeight - searchCardHeight)) + searchCardHeight
+
+            val lp = searchCardView.layoutParams as CollapsingToolbarLayout.LayoutParams
+            if (lp.marginStart != margin.toInt() || lp.marginEnd != margin.toInt() || lp.bottomMargin != margin.toInt()) {
+                lp.height = height.toInt()
+                lp.marginStart = margin.toInt()
+                lp.marginEnd = margin.toInt()
+                lp.bottomMargin = margin.toInt()
+                searchCardView.layoutParams = lp
+            }
+        }
+
+        adapter = GifRecyclerAdapter(this, rendition)
         adapter.setEmptyView(emptyView)
         adapter.setOnItemClickListener(this)
 
         recycler.adapter = adapter
         recycler.layoutManager = StaggeredGridLayoutManager(2, VERTICAL)
+        recycler.addOnScrollListener(PagingScrollListener {
+            nextPage()
+        })
 
         searchView.setOnQueryTextListener(this)
 
-        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) BODY else NONE)
+        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) BASIC else NONE)
+
+        // Delay the trending load
+        recycler.postDelayed({
+            loadTrending()
+        }, 250)
     }
 
 
@@ -109,35 +143,66 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
     }
 
 
+    private fun loadTrending() {
+        updateState(State.Change.IsLoading)
+        searchDisposable?.dispose()
+        searchDisposable = giphy.trending(if (limit == -1) null else limit, state.offset)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(this::processResponse) {
+                    updateState(State.Change.Error(getString(R.string.error_gifs_loading)))
+                }
+    }
+
+
     private fun search(text: String) {
         updateState(State.Change.Query(text))
         updateState(State.Change.IsLoading)
         searchDisposable?.dispose()
-        searchDisposable =  giphy.search(text, if (limit == -1) null else limit, state.offset)
+        searchDisposable =  giphy.search(text, if (limit == -1) null else limit, state.offset, lang = lang)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    updateState(State.Change.PagedResults(it.data))
-                    updateState(State.Change.Offset(it.pagination?.offset ?: 0))
-                }, {
-                    updateState(State.Change.Error(it.localizedMessage ?: "Was unable to find GIFs for this search term"))
-                })
+                .subscribe(this::processResponse) {
+                    updateState(State.Change.Error(getString(R.string.error_gifs_loading)))
+                }
     }
 
 
     private fun nextPage() {
-        state.query?.let {
+        Log.i("GiphySearchActivity", "Getting next page ${state.offset}")
+        if (state.query != null && state.offset != -1) {
+            updateState(State.Change.IsLoading)
+            state.query?.let {
+                searchDisposable?.dispose()
+                searchDisposable = giphy.search(it, if (limit == -1) null else limit, state.offset)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(this::processResponse) {
+                            updateState(State.Change.Error(it.localizedMessage
+                                    ?: "Was unable to find GIFs for this search term"))
+                        }
+            }
+        } else if (state.offset != -1) {
+            updateState(State.Change.IsLoading)
             searchDisposable?.dispose()
-            searchDisposable =  giphy.search(it, if (limit == -1) null else limit, state.offset)
+            searchDisposable = giphy.trending(if (limit == -1) null else limit, state.offset)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        updateState(State.Change.PagedResults(it.data))
-                        updateState(State.Change.Offset(it.pagination?.offset ?: 0))
-                    }, {
+                    .subscribe(this::processResponse) {
                         updateState(State.Change.Error(it.localizedMessage ?: "Was unable to find GIFs for this search term"))
-                    })
+                    }
         }
+    }
+
+
+    private fun processResponse(response: GifResponse) {
+        var offset = 0
+        response.pagination?.let {
+            offset = if (it.count == it.total_count) -1 else it.offset + it.count
+        }
+
+        updateState(State.Change.PagedResults(response.data))
+        updateState(State.Change.Offset(offset))
     }
 
 
@@ -159,7 +224,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
             is Change.Error -> this.copy(error = change.description, isLoading = false)
             is Change.Offset -> this.copy(offset = change.offset)
             is Change.PagedResults -> this.copy(results = this.results.plus(change.results), isLoading = false)
-            is Change.Query -> this.copy(query = change.query, offset = 0)
+            is Change.Query -> this.copy(query = change.query, offset = 0, results = emptyList())
         }
 
 
@@ -171,6 +236,27 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
             class Query(val query: String?) : Change("user -> query: $query")
         }
 
+    }
+
+
+    inner class PagingScrollListener(private val callback: (Unit) -> Unit) : RecyclerView.OnScrollListener() {
+
+        private val layoutManager = recycler.layoutManager as StaggeredGridLayoutManager
+
+        override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+            val visibleItemCount = layoutManager.childCount
+            val totalItemCount = layoutManager.itemCount
+            val firstVisibleItemPositions = layoutManager.findFirstVisibleItemPositions(null)
+            val firstVisibleItemPosition = firstVisibleItemPositions.first()
+
+            if (!state.isLoading && state.offset != -1 && !state.results.isEmpty()) {
+                if (visibleItemCount + firstVisibleItemPosition >= totalItemCount
+                        && firstVisibleItemPosition >= 0
+                        && totalItemCount >= PAGE_SIZE) {
+                    callback.invoke(Unit)
+                }
+            }
+        }
     }
 
 
@@ -191,11 +277,15 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
                                   limit: Int? = null,
                                   lang: String? = null): Intent {
             val intent = Intent(context, GiphySearchActivity::class.java)
+            intent.putExtras(bundle {
+                EXTRA_API_KEY to apiKey
+                url?.also { EXTRA_URL to url }
+                rendition?.also { EXTRA_RENDITION to rendition }
+                limit?.also { EXTRA_LIMIT to limit }
+                lang?.also { EXTRA_LANG to lang }
+            })
+
             intent.putExtra(EXTRA_API_KEY, apiKey)
-            url?.also { intent.putExtra(EXTRA_URL, url) }
-            rendition?.also { intent.putExtra(EXTRA_RENDITION, rendition.key) }
-            limit?.also { intent.putExtra(EXTRA_LIMIT, limit) }
-            lang?.also { intent.putExtra(EXTRA_LANG, lang) }
             return intent
         }
     }

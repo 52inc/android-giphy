@@ -1,8 +1,13 @@
 package com.ftinc.giphy
 
+
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import com.ftinc.giphy.api.Giphy
+import com.ftinc.giphy.api.model.Rendition
+import com.ftinc.giphy.search.GiphySearch
+import kotlinx.android.synthetic.main.activity_main.*
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -10,16 +15,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val giphy = Giphy("some_key")
+        actionSearch.setOnClickListener {
 
-        giphy.search("Bacon") {
-            limit = 50
-            offset = 25
-        }.subscribe({
+            GiphySearch.create(BuildConfig.GIPHY_API_KEY) {
+                rendition = Rendition.DOWNSIZED_STILL
+            }.start(this)
 
-        }, {
+        }
+    }
 
-        })
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        GiphySearch.parseResult(resultCode, requestCode, data)?.let {
+            GlideApp.with(this)
+                    .asGif()
+                    .load(it.images.original.url)
+                    .into(image)
+        }
     }
 }

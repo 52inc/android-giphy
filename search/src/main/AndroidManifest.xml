@@ -1,13 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ftinc.giphy.search" >
 
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application>
         <activity android:name=".GiphySearchActivity"
             android:theme="@style/Theme.GiphySearch"
             />
-
-        <meta-data
-            android:name="com.ftinc.giphy.search.GiphyGlideModule"
-            android:value="GlideModule" />
     </application>
 </manifest>

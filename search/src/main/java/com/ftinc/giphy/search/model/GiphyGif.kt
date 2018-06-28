@@ -17,20 +17,20 @@ data class GiphyGif(
         val username: String,
         val source: String,
         val rating: String,
-        val user: GiphyUser,
+        val user: GiphyUser?,
         val source_tld: String,
         val source_postUrl: String,
-        val updateDatetime: String, /* yyy-mm-dd hh:mm:ss */
-        val createDatetime: String,
-        val importDatetime: String,
-        val trendingDatetime: String,
+        val updateDatetime: String?, /* yyy-mm-dd hh:mm:ss */
+        val createDatetime: String?,
+        val importDatetime: String?,
+        val trendingDatetime: String?,
         val images: GiphyImages,
         val title: String
 ) : Parcelable {
 
     internal constructor(gif: Gif) : this(gif.type,
             gif.id, gif.slug, gif.url, gif.bitly_url, gif.embed_url, gif.username, gif.source, gif.rating,
-            GiphyUser(gif.user.avatar_url, gif.user.banner_url, gif.user.profile_url, gif.user.username, gif.user.display_name, gif.user.twitter),
+            gif.user?.let { GiphyUser(it.avatar_url, it.banner_url, it.profile_url, it.username, it.display_name, it.twitter) },
             gif.source_tld, gif.source_post_url, gif.update_datetime, gif.create_datetime, gif.import_datetime, gif.trending_datetime,
             GiphyImages(gif.images.fixed_height.giphy(),
                     gif.images.fixed_height_still.giphy(),

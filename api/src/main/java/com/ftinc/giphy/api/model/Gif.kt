@@ -12,13 +12,13 @@ data class Gif(
         val username: String,
         val source: String,
         val rating: String,
-        val user: User,
+        val user: User?,
         val source_tld: String,
         val source_post_url: String,
-        val update_datetime: String, /* yyy-mm-dd hh:mm:ss */
-        val create_datetime: String,
-        val import_datetime: String,
-        val trending_datetime: String,
+        val update_datetime: String?, /* yyy-mm-dd hh:mm:ss */
+        val create_datetime: String?,
+        val import_datetime: String?,
+        val trending_datetime: String?,
         val images: Images,
         val title: String
 )
