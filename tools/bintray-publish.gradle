@@ -2,14 +2,14 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 
 bintray {
-    user = BINTRAY_USER
-    key = BINTRAY_API_KEY
+    user = FTINC_BINTRAY_USER
+    key = FTINC_BINTRAY_API_KEY
     configurations = ['archives']
     publications = ['mavenJava']
     pkg {
-        repo = 'pokemon-tcg-sdk-kotlin'
-        name = 'pokemon-tcg-sdk-kotlin'
-        userOrg = 'r0adkll'
+        repo = 'android-giphy'
+        name = 'android-giphy-api'
+        userOrg = '52inc'
         licenses = ['Apache-2.0']
         vcsUrl = POM_URL
         publish = true
@@ -70,7 +70,7 @@ publishing {
 }
 
 // custom tasks for creating source/javadoc jars
-task sourcesJar(type: Jar, dependsOn: classes) {
+task sourcesJar(type: Jar) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }

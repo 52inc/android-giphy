@@ -3,6 +3,9 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
+group = GROUP
+version = VERSION_NAME
+
 android {
     compileSdkVersion 27
 
@@ -35,7 +38,7 @@ dependencies {
 
     implementation "com.52inc:52Kit-core:${ftkit_version}"
     implementation "com.52inc:52Kit-kotlin:${ftkit_version}"
-    implementation "io.reactivex.rxjava2:rxandroid:${rxandroid_version}"
+    api "io.reactivex.rxjava2:rxandroid:${rxandroid_version}"
 
     testImplementation 'junit:junit:4.12'
 
@@ -46,3 +49,5 @@ dependencies {
 androidExtensions {
     experimental = true
 }
+
+apply from: '../tools/bintray-publish-android.gradle'
