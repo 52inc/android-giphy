@@ -61,7 +61,6 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
         appbar.setNavigationOnClickListener { finish() }
 
         appbar_layout.addOnOffsetChangedListener { _, verticalOffset ->
-            Log.d("GSA", "onOffsetChanged($verticalOffset, ${appbar.height})")
             val percent = (appbar.height + verticalOffset).toFloat() / appbar.height.toFloat()
             val margin = percent * searchCardMargin
             val height = ((1f - percent) * (appBarHeight - searchCardHeight)) + searchCardHeight
@@ -168,7 +167,6 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
 
 
     private fun nextPage() {
-        Log.i("GiphySearchActivity", "Getting next page ${state.offset}")
         if (state.query != null && state.offset != -1) {
             updateState(State.Change.IsLoading)
             state.query?.let {
