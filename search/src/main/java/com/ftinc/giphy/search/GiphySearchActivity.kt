@@ -87,7 +87,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
 
         searchView.setOnQueryTextListener(this)
 
-        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) HEADERS else BASIC)
+        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) HEADERS else NONE)
 
         // Delay the trending load
         recycler.postDelayed({
