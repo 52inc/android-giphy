@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ImageView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.ftinc.kit.widget.BezelImageView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/image"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="4dp"
-    android:minHeight="200dp"
+    android:stateListAnimator="@animator/elevation_state_anim"
+    app:maskDrawable="@drawable/dr_round_rect_mask"
+    app:borderDrawable="@drawable/dr_round_rect_outline_mask"
+    tools:minHeight="200dp"
     tools:background="#ccc"
+    android:elevation="2dp"
     />

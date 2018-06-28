@@ -89,6 +89,6 @@ class Giphy(
 
 
     companion object {
-        private const val DEFAULT_URL = "https://api.giphy.com/"
+        const val DEFAULT_URL = "https://api.giphy.com/"
     }
 }

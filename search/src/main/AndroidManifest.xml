@@ -5,5 +5,9 @@
         <activity android:name=".GiphySearchActivity"
             android:theme="@style/Theme.GiphySearch"
             />
+
+        <meta-data
+            android:name="com.ftinc.giphy.search.GiphyGlideModule"
+            android:value="GlideModule" />
     </application>
 </manifest>

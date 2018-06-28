@@ -19,6 +19,7 @@ ext {
     okhttp_version =         '3.10.0'
     retrofit_version =       '2.4.0'
     rxjava_version =         '2.1.16'
+    ftkit_version =          '0.5.5-SNAPSHOT'
 
     // App Dependencies
     glide_version =          '4.7.1'

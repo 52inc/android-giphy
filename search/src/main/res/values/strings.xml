@@ -2,4 +2,5 @@
 <resources>
 
     <string name="hint_giphy_query">Search GIFs</string>
+    <string name="empty_message_search_results">Looks like there aren\'t any GIFs available for that search term</string>
 </resources>
