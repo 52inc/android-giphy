@@ -24,7 +24,6 @@ import kotlinx.android.synthetic.main.activity_giphy_search.*
 import android.nfc.tech.MifareUltralight.PAGE_SIZE
 import android.support.design.widget.CollapsingToolbarLayout
 import android.util.Log
-import android.view.ViewGroup
 import com.ftinc.giphy.api.model.GifResponse
 import com.ftinc.kit.kotlin.extensions.dpToPx
 import com.ftinc.kit.kotlin.utils.*
