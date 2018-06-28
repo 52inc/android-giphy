@@ -87,7 +87,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
 
         searchView.setOnQueryTextListener(this)
 
-        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) BASIC else NONE)
+        giphy = Giphy(apiKey, url, if (BuildConfig.DEBUG) HEADERS else BASIC)
 
         // Delay the trending load
         recycler.postDelayed({
@@ -148,6 +148,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::processResponse) {
+                    it.printStackTrace()
                     updateState(State.Change.Error(getString(R.string.error_gifs_loading)))
                 }
     }
@@ -161,6 +162,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::processResponse) {
+                    it.printStackTrace()
                     updateState(State.Change.Error(getString(R.string.error_gifs_loading)))
                 }
     }
@@ -175,6 +177,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(this::processResponse) {
+                            it.printStackTrace()
                             updateState(State.Change.Error(it.localizedMessage
                                     ?: "Was unable to find GIFs for this search term"))
                         }
@@ -186,6 +189,7 @@ class GiphySearchActivity : AppCompatActivity(), ListRecyclerAdapter.OnItemClick
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(this::processResponse) {
+                        it.printStackTrace()
                         updateState(State.Change.Error(it.localizedMessage ?: "Was unable to find GIFs for this search term"))
                     }
         }
